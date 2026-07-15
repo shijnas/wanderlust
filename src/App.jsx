@@ -70,8 +70,12 @@ function App() {
   };
 
   // Currency factors and symbols
-  const currencySymbols = { USD: '$', EUR: '€', NOK: 'kr' };
-  const currencyFactors = { USD: 1.0, EUR: 0.92, NOK: 10.5 };
+  const currencySymbols = { 
+    USD: '$', EUR: '€', NOK: 'kr', INR: '₹', GBP: '£', JPY: '¥', CAD: 'C$', AUD: 'A$' 
+  };
+  const currencyFactors = { 
+    USD: 1.0, EUR: 0.92, NOK: 10.5, INR: 83.5, GBP: 0.78, JPY: 160.0, CAD: 1.36, AUD: 1.50 
+  };
 
   const handleToggleWishlist = (id) => {
     setWishlist(prev => {

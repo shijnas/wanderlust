@@ -2,6 +2,28 @@ import React, { useState } from 'react';
 import { Search, Menu, X, Globe, DollarSign, User } from 'lucide-react';
 import './Navbar.css';
 
+const LANGUAGES = [
+  { code: 'EN', name: 'English' },
+  { code: 'NO', name: 'Norsk' },
+  { code: 'DE', name: 'Deutsch' },
+  { code: 'FR', name: 'Français' },
+  { code: 'ES', name: 'Español' },
+  { code: 'IT', name: 'Italiano' },
+  { code: 'JA', name: '日本語' },
+  { code: 'HI', name: 'हिन्दी' }
+];
+
+const CURRENCIES = [
+  { code: 'USD', symbol: '$' },
+  { code: 'EUR', symbol: '€' },
+  { code: 'NOK', symbol: 'kr' },
+  { code: 'INR', symbol: '₹' },
+  { code: 'GBP', symbol: '£' },
+  { code: 'JPY', symbol: '¥' },
+  { code: 'CAD', symbol: 'C$' },
+  { code: 'AUD', symbol: 'A$' }
+];
+
 export default function Navbar({ 
   activeTab, 
   onTabChange, 
@@ -18,6 +40,24 @@ export default function Navbar({
   const handleTabClick = (tabId) => {
     onTabChange(tabId);
     setMobileMenuOpen(false);
+  };
+
+  const getCurrencySymbol = (code) => {
+    const match = CURRENCIES.find(c => c.code === code);
+    return match ? match.symbol : '$';
+  };
+
+  // Cycle switchers for mobile views
+  const cycleCurrency = () => {
+    const idx = CURRENCIES.findIndex(c => c.code === currency);
+    const nextIdx = (idx + 1) % CURRENCIES.length;
+    onCurrencyChange(CURRENCIES[nextIdx].code);
+  };
+
+  const cycleLanguage = () => {
+    const idx = LANGUAGES.findIndex(l => l.code === language);
+    const nextIdx = (idx + 1) % LANGUAGES.length;
+    onLanguageChange(LANGUAGES[nextIdx].code);
   };
 
   return (
@@ -48,10 +88,10 @@ export default function Navbar({
           {/* Mobile Actions Panel */}
           <div className="mobile-only-actions">
             <div className="mobile-switchers">
-              <button onClick={() => onCurrencyChange(currency === 'USD' ? 'EUR' : currency === 'EUR' ? 'NOK' : 'USD')}>
-                Currency: {currency}
+              <button onClick={cycleCurrency}>
+                Currency: {currency} ({getCurrencySymbol(currency)})
               </button>
-              <button onClick={() => onLanguageChange(language === 'EN' ? 'NO' : language === 'NO' ? 'DE' : 'EN')}>
+              <button onClick={cycleLanguage}>
                 Language: {language}
               </button>
             </div>
@@ -76,10 +116,16 @@ export default function Navbar({
               <span>{language}</span>
             </button>
             {showLangMenu && (
-              <div className="switcher-dropdown-list glass-panel">
-                <div className="dropdown-item" onClick={() => { onLanguageChange('EN'); setShowLangMenu(false); }}>English</div>
-                <div className="dropdown-item" onClick={() => { onLanguageChange('NO'); setShowLangMenu(false); }}>Norsk</div>
-                <div className="dropdown-item" onClick={() => { onLanguageChange('DE'); setShowLangMenu(false); }}>Deutsch</div>
+              <div className="switcher-dropdown-list glass-panel dropdown-long-list">
+                {LANGUAGES.map(lang => (
+                  <div 
+                    key={lang.code}
+                    className="dropdown-item" 
+                    onClick={() => { onLanguageChange(lang.code); setShowLangMenu(false); }}
+                  >
+                    {lang.name}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -91,14 +137,20 @@ export default function Navbar({
               onClick={() => { setShowCurrMenu(!showCurrMenu); setShowLangMenu(false); }}
               title="Change Currency"
             >
-              <span className="curr-symbol">{currency === 'USD' ? '$' : currency === 'EUR' ? '€' : 'kr'}</span>
+              <span className="curr-symbol">{getCurrencySymbol(currency)}</span>
               <span>{currency}</span>
             </button>
             {showCurrMenu && (
-              <div className="switcher-dropdown-list glass-panel">
-                <div className="dropdown-item" onClick={() => { onCurrencyChange('USD'); setShowCurrMenu(false); }}>USD ($)</div>
-                <div className="dropdown-item" onClick={() => { onCurrencyChange('EUR'); setShowCurrMenu(false); }}>EUR (€)</div>
-                <div className="dropdown-item" onClick={() => { onCurrencyChange('NOK'); setShowCurrMenu(false); }}>NOK (kr)</div>
+              <div className="switcher-dropdown-list glass-panel dropdown-long-list">
+                {CURRENCIES.map(curr => (
+                  <div 
+                    key={curr.code}
+                    className="dropdown-item" 
+                    onClick={() => { onCurrencyChange(curr.code); setShowCurrMenu(false); }}
+                  >
+                    {curr.code} ({curr.symbol})
+                  </div>
+                ))}
               </div>
             )}
           </div>

@@ -1,204 +1,475 @@
-import React, { useState } from 'react';
-import { Calendar, Map, MapPin, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Calendar, Map, MapPin, ChevronDown, Compass, Search, Navigation, CloudSun, Loader2, Sparkles, Sliders } from 'lucide-react';
 import './BookingSection.css';
 
-const LOCATIONS = [
-  { id: 'lofoten', name: 'Lofoten Islands, NO', lat: 380, lng: 180, dates: '14 Oct - 21 Oct' },
-  { id: 'swiss', name: 'Swiss Alps, CH', lat: 460, lng: 240, dates: '22 Oct - 29 Oct' },
-  { id: 'iceland', name: 'Reykjavik, IS', lat: 310, lng: 130, dates: '02 Nov - 09 Nov' },
-  { id: 'patagonia', name: 'Fitz Roy, AR', lat: 780, lng: 210, dates: '12 Dec - 19 Dec' }
-];
+// Extended destinations for search autocomplete and routing
+const DESTINATIONS = {
+  'lofoten islands': { name: 'Lofoten Islands, Norway', lat: 68.0, lng: 13.5, temp: '-2°C', weather: 'KP 5 Aurora', price: 450, hotel: 'Lofoten Dome Resorts' },
+  'swiss alps': { name: 'Swiss Alps, Switzerland', lat: 46.0, lng: 7.7, temp: '3°C', weather: 'Sunny Snow', price: 520, hotel: 'Zermatt Summit Chalet' },
+  'patagonia': { name: 'Patagonia, Argentina', lat: -49.3, lng: -72.9, temp: '8°C', weather: 'Windy Clouds', price: 320, hotel: 'Fitz Roy Eco-Domes' },
+  'norway': { name: 'Tromsø, Norway', lat: 69.6, lng: 18.9, temp: '-4°C', weather: 'Aurora Active', price: 490, hotel: 'Arctic Water Chalets' },
+  'iceland': { name: 'Reykjavik, Iceland', lat: 64.1, lng: -21.8, temp: '1°C', weather: 'Light Snow', price: 390, hotel: 'Black Sand Lodge' },
+  'tokyo': { name: 'Tokyo, Japan', lat: 35.6, lng: 139.6, temp: '22°C', weather: 'Clear Sky', price: 650, hotel: 'The Peninsula Tokyo' },
+  'bali': { name: 'Bali, Indonesia', lat: -8.4, lng: 115.1, temp: '28°C', weather: 'Tropical Sunny', price: 410, hotel: 'Ubud Hanging Gardens' }
+};
 
-export default function BookingSection() {
-  const [selectedLoc, setSelectedLoc] = useState(LOCATIONS[0]);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showMapSelect, setShowMapSelect] = useState(false);
+export default function BookingSection({ onBook, currencySymbol, currencyFactor }) {
+  const [searchVal, setSearchVal] = useState('Lofoten Islands');
+  const [activeDest, setActiveDest] = useState(DESTINATIONS['lofoten islands']);
+  const [checkIn, setCheckIn] = useState('2026-10-14');
+  const [checkOut, setCheckOut] = useState('2026-10-21');
+  const [guests, setGuests] = useState('2 Adults');
+  const [roomType, setRoomType] = useState('Luxury Suite');
+  const [budget, setBudget] = useState(3000);
+  const [travelStyle, setTravelStyle] = useState('Romantic');
+  
+  // Map and AI filters
+  const [activeFilters, setActiveFilters] = useState(['Hotels', 'Attractions']);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isAiPlanning, setIsAiPlanning] = useState(false);
+  const [selectedRouteMode, setSelectedRouteMode] = useState('driving');
+  
+  // Real Maps API load status
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [mapsError, setMapsError] = useState(false);
+  
+  const mapRef = useRef(null);
+  const googleMapObj = useRef(null);
+  const markersRef = useRef([]);
 
-  const selectLocation = (loc) => {
-    setSelectedLoc(loc);
+  // Convert prices dynamically
+  const formatPrice = (usd) => {
+    return `${currencySymbol}${Math.round(usd * currencyFactor).toLocaleString()}`;
+  };
+
+  // Autocomplete search suggestions
+  const [suggestions, setSuggestions] = useState([]);
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    setSearchVal(val);
+    if (val.length > 1) {
+      const filtered = Object.keys(DESTINATIONS).filter(k => k.includes(val.toLowerCase()));
+      setSuggestions(filtered.map(k => DESTINATIONS[k]));
+    } else {
+      setSuggestions([]);
+    }
+  };
+
+  const handleSelectSuggestion = (dest) => {
+    setSearchVal(dest.name);
+    setActiveDest(dest);
+    setSuggestions([]);
+    if (googleMapObj.current) {
+      const newPos = { lat: dest.lat, lng: dest.lng };
+      googleMapObj.current.panTo(newPos);
+      googleMapObj.current.setZoom(10);
+      recreateMarkers(dest);
+    }
+  };
+
+  // Google Maps Loader
+  useEffect(() => {
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      setMapsError(true);
+      return;
+    }
+
+    // Dynamic Google script injection
+    const scriptId = 'google-maps-script';
+    let script = document.getElementById(scriptId);
+    if (!script) {
+      script = document.createElement('script');
+      script.id = scriptId;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,directions`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        setIsMapLoaded(true);
+        initGoogleMap();
+      };
+      script.onerror = () => {
+        setMapsError(true);
+      };
+      document.head.appendChild(script);
+    } else if (window.google && window.google.maps) {
+      setIsMapLoaded(true);
+      initGoogleMap();
+    }
+  }, []);
+
+  const initGoogleMap = () => {
+    if (!mapRef.current) return;
+    
+    // Custom premium Dark theme style for maps
+    const darkThemeStyle = [
+      { elementType: "geometry", stylers: [{ color: "#07131E" }] },
+      { elementType: "labels.text.stroke", stylers: [{ color: "#07131E" }] },
+      { elementType: "labels.text.fill", stylers: [{ color: "#B5C2D0" }] },
+      { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#2B8FFF", opacity: 0.1 }] },
+      { featureType: "water", elementType: "geometry", stylers: [{ color: "#030a10" }] },
+      { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#2B8FFF" }] },
+      { featureType: "road", elementType: "geometry", stylers: [{ color: "#122536" }] },
+      { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#1b354d" }] },
+      { featureType: "poi", stylers: [{ visibility: "off" }] }
+    ];
+
+    const map = new window.google.maps.Map(mapRef.current, {
+      center: { lat: activeDest.lat, lng: activeDest.lng },
+      zoom: 8,
+      styles: darkThemeStyle,
+      disableDefaultUI: false,
+      zoomControl: true,
+      mapTypeControl: false,
+      scaleControl: true,
+      streetViewControl: true,
+      rotateControl: true,
+      fullscreenControl: true
+    });
+
+    googleMapObj.current = map;
+    recreateMarkers(activeDest);
+  };
+
+  const recreateMarkers = (dest) => {
+    if (!googleMapObj.current) return;
+
+    // Clear old markers
+    markersRef.current.forEach(m => m.setMap(null));
+    markersRef.current = [];
+
+    // Main Destination marker
+    const destMarker = new window.google.maps.Marker({
+      position: { lat: dest.lat, lng: dest.lng },
+      map: googleMapObj.current,
+      title: dest.name,
+      animation: window.google.maps.Animation.DROP
+    });
+
+    const infoWindow = new window.google.maps.InfoWindow({
+      content: `
+        <div style="background:#07131E; color:white; padding:12px; border-radius:12px; font-family:Inter; max-width:200px;">
+          <h4 style="margin:0 0 6px 0; font-family:Space Grotesk;">${dest.name}</h4>
+          <p style="margin:0 0 8px 0; font-size:12px; color:#B5C2D0;">Starting rate: $${dest.price}/night</p>
+          <p style="margin:0; font-size:11px; color:#00F0FF;">Live weather: ${dest.temp} (${dest.weather})</p>
+        </div>
+      `
+    });
+
+    destMarker.addListener('click', () => {
+      infoWindow.open(googleMapObj.current, destMarker);
+    });
+
+    markersRef.current.push(destMarker);
+  };
+
+  const handleFilterToggle = (filter) => {
+    if (activeFilters.includes(filter)) {
+      setActiveFilters(prev => prev.filter(f => f !== filter));
+    } else {
+      setActiveFilters(prev => [...prev, filter]);
+    }
+  };
+
+  // AI Assistant Map Auto-Planner
+  const handleAiPlan = (e) => {
+    e.preventDefault();
+    if (!aiPrompt) return;
+    setIsAiPlanning(true);
+    
+    setTimeout(() => {
+      setIsAiPlanning(false);
+      
+      // Smart prompt matching
+      let match = DESTINATIONS['norway'];
+      if (aiPrompt.toLowerCase().includes('japan') || aiPrompt.toLowerCase().includes('tokyo')) {
+        match = DESTINATIONS['tokyo'];
+      } else if (aiPrompt.toLowerCase().includes('swiss') || aiPrompt.toLowerCase().includes('alps')) {
+        match = DESTINATIONS['swiss alps'];
+      } else if (aiPrompt.toLowerCase().includes('bali')) {
+        match = DESTINATIONS['bali'];
+      } else if (aiPrompt.toLowerCase().includes('iceland')) {
+        match = DESTINATIONS['iceland'];
+      } else if (aiPrompt.toLowerCase().includes('patagonia')) {
+        match = DESTINATIONS['patagonia'];
+      }
+      
+      setSearchVal(match.name);
+      setActiveDest(match);
+      setTravelStyle('Romantic');
+      setGuests('2 Adults');
+      
+      if (googleMapObj.current) {
+        googleMapObj.current.panTo({ lat: match.lat, lng: match.lng });
+        googleMapObj.current.setZoom(9);
+        recreateMarkers(match);
+      }
+    }, 1500);
+  };
+
+  const handleReserve = () => {
+    onBook({
+      name: `${activeDest.name} (${roomType})`,
+      type: `${travelStyle} Experience Package`,
+      price: activeDest.price.toString(),
+      image: activeDest.name.includes('Lofoten') || activeDest.name.includes('Norway') 
+        ? '/norway_aurora.jpg' 
+        : activeDest.name.includes('Alps') 
+        ? '/swiss_alps.jpg'
+        : activeDest.name.includes('Patagonia')
+        ? '/patagonia_trek.jpg'
+        : '/iceland_cabin.jpg'
+    });
   };
 
   return (
     <section className="booking-section" id="deals">
       <div className="container">
+        
+        {/* Filter chips above map dashboard */}
+        <div className="map-filter-chips">
+          {['Hotels', 'Resorts', 'Cabins', 'Villas', 'Restaurants', 'Attractions', 'Hiking', 'Beaches', 'Airports'].map(filter => {
+            const isActive = activeFilters.includes(filter);
+            return (
+              <button 
+                key={filter} 
+                className={`filter-chip ${isActive ? 'active' : ''}`}
+                onClick={() => handleFilterToggle(filter)}
+              >
+                {filter}
+              </button>
+            );
+          })}
+        </div>
+
         <div className="booking-widget glass-panel">
-          
-          {/* Main Grid */}
           <div className="booking-grid">
             
-            {/* Left Content: Selector widgets */}
+            {/* Left Panel: Autocomplete & parameters input */}
             <div className="booking-selectors">
               <h3 className="booking-widget-title">BOOK YOUR STAY</h3>
               
-              {/* Datepicker field */}
+              {/* Destination Google Places Autocomplete */}
               <div className="selector-field-group">
-                <label className="selector-label">Datepicker</label>
-                <div 
-                  className="selector-box glass-panel-hover"
-                  onClick={() => setShowDatePicker(!showDatePicker)}
-                >
-                  <Calendar size={18} className="selector-icon" />
-                  <span className="selector-value">{selectedLoc.name}</span>
-                  <ChevronDown size={16} className="chevron-icon" />
+                <label className="selector-label">Destination search</label>
+                <div className="search-input-wrapper">
+                  <Search size={16} className="search-icon" />
+                  <input 
+                    type="text" 
+                    value={searchVal}
+                    onChange={handleSearchChange}
+                    placeholder="Search destination (e.g. Lofoten, Swiss Alps...)" 
+                    className="map-search-input"
+                  />
+                  {suggestions.length > 0 && (
+                    <div className="autocomplete-suggestions glass-panel">
+                      {suggestions.map((dest, i) => (
+                        <div 
+                          key={i} 
+                          className="suggestion-item" 
+                          onClick={() => handleSelectSuggestion(dest)}
+                        >
+                          <MapPin size={12} className="suggestion-icon" />
+                          <span>{dest.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                {showDatePicker && (
-                  <div className="dropdown-panel glass-panel">
-                    {LOCATIONS.map(loc => (
-                      <div 
-                        key={loc.id} 
-                        className={`dropdown-item ${selectedLoc.id === loc.id ? 'active' : ''}`}
-                        onClick={() => {
-                          selectLocation(loc);
-                          setShowDatePicker(false);
-                        }}
-                      >
-                        {loc.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
 
-              {/* Map view field */}
-              <div className="selector-field-group">
-                <label className="selector-label">Map view</label>
-                <div 
-                  className="selector-box glass-panel-hover"
-                  onClick={() => setShowMapSelect(!showMapSelect)}
-                >
-                  <MapPin size={18} className="selector-icon" />
-                  <span className="selector-value">{selectedLoc.dates}</span>
-                  <ChevronDown size={16} className="chevron-icon" />
+              {/* Dates */}
+              <div className="form-row">
+                <div className="selector-field-group flex-1">
+                  <label className="selector-label">Check-In</label>
+                  <input 
+                    type="date" 
+                    value={checkIn} 
+                    onChange={(e) => setCheckIn(e.target.value)} 
+                    className="date-input-field" 
+                  />
                 </div>
-                {showMapSelect && (
-                  <div className="dropdown-panel glass-panel">
-                    {LOCATIONS.map(loc => (
-                      <div 
-                        key={loc.id} 
-                        className={`dropdown-item ${selectedLoc.id === loc.id ? 'active' : ''}`}
-                        onClick={() => {
-                          selectLocation(loc);
-                          setShowMapSelect(false);
-                        }}
-                      >
-                        {loc.dates} ({loc.name})
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <div className="selector-field-group flex-1">
+                  <label className="selector-label">Check-Out</label>
+                  <input 
+                    type="date" 
+                    value={checkOut} 
+                    onChange={(e) => setCheckOut(e.target.value)} 
+                    className="date-input-field" 
+                  />
+                </div>
               </div>
 
-              <button className="btn-primary w-full booking-submit-btn">
+              {/* Guests and Room Type */}
+              <div className="form-row">
+                <div className="selector-field-group flex-1">
+                  <label className="selector-label">Guests</label>
+                  <div className="select-dropdown-container">
+                    <select value={guests} onChange={(e) => setGuests(e.target.value)}>
+                      <option value="1 Adult">1 Adult</option>
+                      <option value="2 Adults">2 Adults</option>
+                      <option value="3 Adults">3 Adults</option>
+                      <option value="4 Adults">4 Family</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="selector-field-group flex-1">
+                  <label className="selector-label">Room Type</label>
+                  <div className="select-dropdown-container">
+                    <select value={roomType} onChange={(e) => setRoomType(e.target.value)}>
+                      <option value="Luxury Suite">Luxury Suite</option>
+                      <option value="A-Frame Chalet">A-Frame Chalet</option>
+                      <option value="Glass Dome Dome">Glass Dome Dome</option>
+                      <option value="Eco Cabin Lodge">Eco Cabin Lodge</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Budget slider */}
+              <div className="selector-field-group">
+                <div className="budget-label-row">
+                  <label className="selector-label">Budget range</label>
+                  <span className="budget-val-indicator">{formatPrice(budget)} max</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="500" 
+                  max="10000" 
+                  step="250" 
+                  value={budget} 
+                  onChange={(e) => setBudget(parseInt(e.target.value))} 
+                  className="budget-slider"
+                />
+              </div>
+
+              {/* Travel Style */}
+              <div className="selector-field-group">
+                <label className="selector-label">Travel Style</label>
+                <div className="travel-styles-grid">
+                  {['Solo', 'Romantic', 'Adventure', 'Family'].map(style => (
+                    <button 
+                      key={style}
+                      className={`style-btn ${travelStyle === style ? 'active' : ''}`}
+                      onClick={() => setTravelStyle(style)}
+                    >
+                      {style}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* AI Auto-Itinerary search box */}
+              <div className="ai-map-planner-bar">
+                <form onSubmit={handleAiPlan} className="ai-map-search-form">
+                  <Sparkles size={14} className="ai-mini-spark" />
+                  <input 
+                    type="text" 
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    placeholder="AI: e.g. romantic getaway in Japan..." 
+                    className="ai-map-input"
+                  />
+                  <button type="submit" className="ai-map-go-btn" disabled={isAiPlanning}>
+                    {isAiPlanning ? <Loader2 size={12} className="spinner-icon" /> : 'Plot'}
+                  </button>
+                </form>
+              </div>
+
+              <button className="btn-primary w-full booking-submit-btn" onClick={handleReserve}>
                 <span>RESERVE JOURNEY</span>
               </button>
             </div>
 
-            {/* Right Content: Interactive Map */}
+            {/* Right Panel: Interactive Maps container */}
             <div className="booking-map-area">
-              {/* Floating map controls */}
-              <div className="map-controls">
-                <button className="map-view-toggle">
-                  <Map size={14} />
-                  <span>Map view</span>
-                  <ChevronDown size={12} />
-                </button>
-              </div>
+              
+              {/* Google Maps Container */}
+              <div 
+                ref={mapRef} 
+                className="google-map-element" 
+                style={{ width: '100%', height: '100%' }}
+              />
 
-              {/* Futuristic SVG Map */}
-              <div className="map-svg-container">
-                <svg viewBox="0 0 1000 900" className="futuristic-map">
-                  {/* Grid Lines */}
-                  <defs>
-                    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255, 255, 255, 0.02)" strokeWidth="1" />
-                    </pattern>
-                  </defs>
-                  <rect width="100%" height="100%" fill="url(#grid)" />
+              {/* Fallback mock map details displayed when API key is missing */}
+              {mapsError && (
+                <div className="fallback-map-overlay glass-panel">
+                  {/* Grid Lines background */}
+                  <div className="fallback-grid" />
+                  
+                  {/* Glowing Sonar Circles */}
+                  <div className="radar-ripple ripple-1" />
+                  <div className="radar-ripple ripple-2" />
 
-                  {/* High-tech background network/sonar rings */}
-                  <circle cx="500" cy="450" r="300" fill="none" stroke="rgba(0, 240, 255, 0.02)" strokeWidth="1" strokeDasharray="5 5" />
-                  <circle cx="500" cy="450" r="150" fill="none" stroke="rgba(77, 255, 216, 0.02)" strokeWidth="1" strokeDasharray="3 3" />
+                  {/* Connecting Route lines simulation */}
+                  <svg className="fallback-svg-routes" viewBox="0 0 600 400">
+                    <path 
+                      d="M 120 180 Q 220 100 350 140 T 480 200" 
+                      fill="none" 
+                      stroke="var(--accent-cyan)" 
+                      strokeWidth="2" 
+                      strokeDasharray="5 5" 
+                      className="draw-route-path"
+                    />
+                  </svg>
 
-                  {/* Styled Continents (abstracted premium paths) */}
-                  {/* North America */}
-                  <path d="M 50 150 Q 150 120 220 180 T 250 350 T 200 450 T 120 500 T 50 420 Z" fill="rgba(255, 255, 255, 0.015)" stroke="rgba(255, 255, 255, 0.03)" strokeWidth="1.5" />
-                  {/* South America */}
-                  <path d="M 180 500 Q 230 520 250 600 T 260 750 T 220 850 T 180 750 T 150 600 Z" fill="rgba(255, 255, 255, 0.015)" stroke="rgba(255, 255, 255, 0.03)" strokeWidth="1.5" />
-                  {/* Europe & Asia */}
-                  <path d="M 320 250 Q 420 150 550 180 T 700 200 T 850 180 T 900 350 T 800 500 T 600 480 T 450 420 Z" fill="rgba(255, 255, 255, 0.015)" stroke="rgba(255, 255, 255, 0.03)" strokeWidth="1.5" />
-                  {/* Africa */}
-                  <path d="M 400 450 Q 520 440 550 500 T 580 650 T 500 780 T 440 700 T 380 555 Z" fill="rgba(255, 255, 255, 0.015)" stroke="rgba(255, 255, 255, 0.03)" strokeWidth="1.5" />
+                  {/* Pulse Location Markers */}
+                  <div className="fallback-marker active" style={{ left: '45%', top: '35%' }}>
+                    <div className="pulsing-marker-core" />
+                    <div className="pulsing-marker-ring" />
+                    <span className="marker-name-lbl">{activeDest.name}</span>
+                  </div>
 
-                  {/* Connecting high-tech paths between active locations */}
-                  <path d="M 180 180 Q 240 130 310 130 T 380 180 T 460 240" fill="none" stroke="rgba(0, 240, 255, 0.1)" strokeWidth="1.5" strokeDasharray="4 4" />
-                  <path d="M 210 780 Q 240 600 310 130" fill="none" stroke="rgba(77, 255, 216, 0.08)" strokeWidth="1.5" strokeDasharray="4 4" />
+                  {/* Fallback control bar */}
+                  <div className="fallback-badge-notice">
+                    <span>Google Maps API Offline • Interactive Simulated Mode</span>
+                  </div>
+                </div>
+              )}
 
-                  {/* Map Markers */}
-                  {LOCATIONS.map(loc => {
-                    const isActive = selectedLoc.id === loc.id;
-                    return (
-                      <g 
-                        key={loc.id} 
-                        className={`map-marker-group ${isActive ? 'active' : ''}`}
-                        onClick={() => selectLocation(loc)}
-                      >
-                        {/* Outer Glow Ring */}
-                        <circle 
-                          cx={loc.lng + 200} // adjust offset to visually align locations
-                          cy={loc.lat - 150} 
-                          r={isActive ? 22 : 12} 
-                          className="marker-glow-ring" 
-                          fill="none" 
-                          stroke={isActive ? '#00F0FF' : 'rgba(77, 255, 216, 0.4)'} 
-                          strokeWidth="2"
-                        />
-                        {/* Core Pulse */}
-                        <circle 
-                          cx={loc.lng + 200} 
-                          cy={loc.lat - 150} 
-                          r={isActive ? 8 : 5} 
-                          className="marker-core" 
-                          fill={isActive ? '#4DFFD8' : '#00F0FF'} 
-                        />
-                        
-                        {/* Floating destination text tooltip */}
-                        {isActive && (
-                          <g className="marker-tooltip">
-                            <rect 
-                              x={loc.lng + 200 - 80} 
-                              y={loc.lat - 150 - 48} 
-                              width="160" 
-                              height="30" 
-                              rx="6" 
-                              fill="rgba(7, 19, 30, 0.85)" 
-                              stroke="rgba(0, 240, 255, 0.3)" 
-                              strokeWidth="1"
-                              className="tooltip-box"
-                            />
-                            <text 
-                              x={loc.lng + 200} 
-                              y={loc.lat - 150 - 28} 
-                              textAnchor="middle" 
-                              fill="white" 
-                              fontSize="11" 
-                              fontWeight="600"
-                              fontFamily="Inter"
-                            >
-                              {loc.name.split(',')[0]}
-                            </text>
-                          </g>
-                        )}
-                      </g>
-                    );
-                  })}
-                </svg>
+              {/* Floating Slide-in Info Card (glass effect) */}
+              <div className="map-info-slide-card glass-panel fade-in-up">
+                <img 
+                  src={
+                    activeDest.name.includes('Lofoten') || activeDest.name.includes('Norway') 
+                      ? '/norway_aurora.jpg' 
+                      : activeDest.name.includes('Alps') 
+                      ? '/swiss_alps.jpg'
+                      : activeDest.name.includes('Patagonia')
+                      ? '/patagonia_trek.jpg'
+                      : '/iceland_cabin.jpg'
+                  } 
+                  alt={activeDest.name} 
+                  className="info-card-img" 
+                />
+                
+                <div className="info-card-details">
+                  <div className="card-top-row">
+                    <span className="card-lbl-tag">{activeDest.weather}</span>
+                    <span className="card-lbl-temp"><CloudSun size={12} /> {activeDest.temp}</span>
+                  </div>
+                  
+                  <h4>{activeDest.name}</h4>
+                  
+                  <div className="card-bottom-row">
+                    <div className="card-price">
+                      <span className="price-lbl">Starting rate</span>
+                      <strong>{formatPrice(activeDest.price)}/night</strong>
+                    </div>
+                    
+                    <button className="card-action-btn" onClick={handleReserve}>
+                      Book Now
+                    </button>
+                  </div>
+                </div>
               </div>
 
             </div>
 
           </div>
-
         </div>
+
       </div>
     </section>
   );

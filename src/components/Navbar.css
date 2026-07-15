@@ -282,3 +282,9 @@
   cursor: pointer;
 }
 
+.dropdown-long-list {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+
