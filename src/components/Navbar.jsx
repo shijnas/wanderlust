@@ -1,48 +1,115 @@
 import React, { useState } from 'react';
-import { Search, Menu, X } from 'lucide-react';
+import { Search, Menu, X, Globe, DollarSign, User } from 'lucide-react';
 import './Navbar.css';
 
-export default function Navbar() {
+export default function Navbar({ 
+  activeTab, 
+  onTabChange, 
+  currency, 
+  onCurrencyChange, 
+  language, 
+  onLanguageChange, 
+  onProfileClick 
+}) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showLangMenu, setShowLangMenu] = useState(false);
+  const [showCurrMenu, setShowCurrMenu] = useState(false);
+
+  const handleTabClick = (tabId) => {
+    onTabChange(tabId);
+    setMobileMenuOpen(false);
+  };
 
   return (
     <nav className="navbar-container glass-panel">
       <div className="navbar-content">
+        
         {/* Left: Logo */}
         <div className="logo-area">
-          <a href="#" className="logo-text">WANDERLUST</a>
+          <a href="#" className="logo-text" onClick={() => handleTabClick('explore')}>WANDERLUST</a>
         </div>
 
-        {/* Center: Menu links */}
+        {/* Center: Navigation Menu */}
         <div className={`nav-links ${mobileMenuOpen ? 'mobile-active' : ''}`}>
-          <a href="#explore" className="nav-link active" onClick={() => setMobileMenuOpen(false)}>Explore</a>
-          <a href="#stays" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Stays</a>
-          <a href="#flights" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Flights</a>
-          <a href="#deals" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Deals</a>
-          <a href="#blog" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Blog</a>
+          {['explore', 'stays', 'flights', 'deals', 'blog'].map(tab => (
+            <a 
+              key={tab}
+              href={`#${tab}`} 
+              className={`nav-link ${activeTab === tab ? 'active' : ''}`}
+              onClick={(e) => {
+                e.preventDefault();
+                handleTabClick(tab);
+              }}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </a>
+          ))}
           
-          {/* Mobile elements */}
+          {/* Mobile Actions Panel */}
           <div className="mobile-only-actions">
-            <button className="mobile-search-btn">
-              <Search size={20} />
-              <span>Search Destination</span>
-            </button>
-            <button className="btn-primary w-full">
-              <span>Sign Up</span>
+            <div className="mobile-switchers">
+              <button onClick={() => onCurrencyChange(currency === 'USD' ? 'EUR' : currency === 'EUR' ? 'NOK' : 'USD')}>
+                Currency: {currency}
+              </button>
+              <button onClick={() => onLanguageChange(language === 'EN' ? 'NO' : language === 'NO' ? 'DE' : 'EN')}>
+                Language: {language}
+              </button>
+            </div>
+            <button className="btn-primary w-full" onClick={() => { setMobileMenuOpen(false); onProfileClick(); }}>
+              <User size={16} />
+              <span>My Profile</span>
             </button>
           </div>
         </div>
 
-        {/* Right: Actions */}
+        {/* Right: Actions and Switchers */}
         <div className="nav-actions">
-          <button className="search-btn-icon" aria-label="Search">
-            <Search size={20} />
-          </button>
-          <button className="btn-primary sign-up-btn">
-            <span>Sign Up</span>
+          
+          {/* Language Switcher */}
+          <div className="switcher-dropdown-wrapper">
+            <button 
+              className="switcher-trigger-btn" 
+              onClick={() => { setShowLangMenu(!showLangMenu); setShowCurrMenu(false); }}
+              title="Change Language"
+            >
+              <Globe size={18} />
+              <span>{language}</span>
+            </button>
+            {showLangMenu && (
+              <div className="switcher-dropdown-list glass-panel">
+                <div className="dropdown-item" onClick={() => { onLanguageChange('EN'); setShowLangMenu(false); }}>English</div>
+                <div className="dropdown-item" onClick={() => { onLanguageChange('NO'); setShowLangMenu(false); }}>Norsk</div>
+                <div className="dropdown-item" onClick={() => { onLanguageChange('DE'); setShowLangMenu(false); }}>Deutsch</div>
+              </div>
+            )}
+          </div>
+
+          {/* Currency Switcher */}
+          <div className="switcher-dropdown-wrapper">
+            <button 
+              className="switcher-trigger-btn" 
+              onClick={() => { setShowCurrMenu(!showCurrMenu); setShowLangMenu(false); }}
+              title="Change Currency"
+            >
+              <span className="curr-symbol">{currency === 'USD' ? '$' : currency === 'EUR' ? '€' : 'kr'}</span>
+              <span>{currency}</span>
+            </button>
+            {showCurrMenu && (
+              <div className="switcher-dropdown-list glass-panel">
+                <div className="dropdown-item" onClick={() => { onCurrencyChange('USD'); setShowCurrMenu(false); }}>USD ($)</div>
+                <div className="dropdown-item" onClick={() => { onCurrencyChange('EUR'); setShowCurrMenu(false); }}>EUR (€)</div>
+                <div className="dropdown-item" onClick={() => { onCurrencyChange('NOK'); setShowCurrMenu(false); }}>NOK (kr)</div>
+              </div>
+            )}
+          </div>
+
+          {/* Profile Access Button */}
+          <button className="btn-primary profile-btn-pill" onClick={onProfileClick} title="Open Explorer Profile">
+            <User size={16} />
+            <span>Profile</span>
           </button>
           
-          {/* Hamburger button */}
+          {/* Hamburger Menu Trigger */}
           <button 
             className="hamburger-btn" 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -51,6 +118,7 @@ export default function Navbar() {
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
+
       </div>
     </nav>
   );

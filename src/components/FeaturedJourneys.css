@@ -261,3 +261,124 @@
     font-size: 13px;
   }
 }
+
+.empty-search-notice {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  background: rgba(255, 230, 0, 0.03);
+  border: 1px solid rgba(255, 230, 0, 0.15);
+  border-radius: var(--radius-sm);
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.empty-search-notice .notice-icon {
+  color: #FFE600;
+  flex-shrink: 0;
+}
+
+.empty-search-notice h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 2px;
+}
+
+.empty-search-notice p {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.filter-active-tag {
+  text-align: left;
+  margin-bottom: 16px;
+}
+
+.filter-active-tag span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-cyan);
+  background: rgba(0, 240, 255, 0.08);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+}
+
+/* Premium Card and Element Interactions */
+.clickable-journey-card {
+  cursor: pointer;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.clickable-journey-card:hover {
+  transform: translateY(-12px) scale(1.02);
+  border-color: rgba(0, 240, 255, 0.4);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 
+              0 0 35px rgba(0, 240, 255, 0.15);
+}
+
+.clickable-journey-card:hover .journey-img {
+  transform: scale(1.08);
+  filter: saturate(1.12);
+}
+
+.fav-btn {
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+              box-shadow 0.3s ease, 
+              border-color 0.3s ease;
+}
+
+.fav-btn:hover {
+  transform: scale(1.15) rotate(8deg);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+  border-color: rgba(0, 240, 255, 0.5);
+  background: rgba(7, 19, 30, 0.7);
+}
+
+.interactive-rating {
+  cursor: pointer;
+  transition: transform 0.3s ease, 
+              background-color 0.3s ease, 
+              color 0.3s ease, 
+              box-shadow 0.3s ease;
+}
+
+.interactive-rating:hover {
+  transform: scale(1.08);
+  background: var(--accent-cyan);
+  color: var(--bg-primary);
+  box-shadow: 0 0 15px var(--accent-cyan);
+}
+
+.interactive-rating:hover .star-icon {
+  color: var(--bg-primary);
+  transform: rotate(720deg);
+  transition: transform 0.8s ease;
+}
+
+.interactive-price {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+}
+
+.interactive-price:hover {
+  border-color: rgba(0, 240, 255, 0.3);
+  background: rgba(0, 240, 255, 0.05);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
+  transform: scale(1.03);
+}
+
+.clickable-journey-card:hover .journey-explore-btn {
+  background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-blue) 100%);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+}
+
+

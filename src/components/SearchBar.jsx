@@ -2,15 +2,17 @@ import React, { useState } from 'react';
 import { PlaneTakeoff, MapPin, Calendar, Users, Search } from 'lucide-react';
 import './SearchBar.css';
 
-export default function SearchBar() {
-  const [departure, setDeparture] = useState('Oslo, NO');
-  const [destination, setDestination] = useState('Lofoten Islands, NO');
-  const [dates, setDates] = useState('14 Oct - 21 Oct');
-  const [guests, setGuests] = useState('2 Adults');
+export default function SearchBar({ filters, onSearch }) {
+  const [departure, setDeparture] = useState(filters?.departure || 'Oslo, NO');
+  const [destination, setDestination] = useState(filters?.destination || '');
+  const [dates, setDates] = useState(filters?.dates || '14 Oct - 21 Oct');
+  const [guests, setGuests] = useState(filters?.guests || '2 Adults');
 
   const handleSearch = (e) => {
     e.preventDefault();
-    console.log('Searching for:', { departure, destination, dates, guests });
+    if (onSearch) {
+      onSearch({ departure, destination, dates, guests });
+    }
   };
 
   return (
@@ -52,7 +54,7 @@ export default function SearchBar() {
                   value={destination} 
                   onChange={(e) => setDestination(e.target.value)} 
                   className="search-input"
-                  placeholder="Where to?"
+                  placeholder="Where to? (e.g. Iceland, Swiss, Patagonia)"
                 />
               </div>
             </div>
