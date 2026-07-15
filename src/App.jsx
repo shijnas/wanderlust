@@ -12,6 +12,7 @@ import RatingBreakdownModal from './components/RatingBreakdownModal';
 import PricingDrawer from './components/PricingDrawer';
 import CheckoutModal from './components/CheckoutModal';
 import UserDashboard from './components/UserDashboard';
+import LoginModal from './components/LoginModal';
 import { JOURNEYS_DATA } from './components/FeaturedJourneys';
 
 // Initial pre-booked trip
@@ -31,6 +32,12 @@ function App() {
   const [currency, setCurrency] = useState('USD');
   const [language, setLanguage] = useState('EN');
   const [toasts, setToasts] = useState([]);
+
+  // Authentication State
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [pendingBookingItem, setPendingBookingItem] = useState(null);
 
   // Wishlist state synced with localStorage
   const [wishlist, setWishlist] = useState(() => {
@@ -90,6 +97,30 @@ function App() {
     });
   };
 
+  // Booking authentication gatekeeper
+  const handleBookRequest = (bookingItem) => {
+    if (!isLoggedIn) {
+      setPendingBookingItem(bookingItem);
+      addToast('Authentication required to book. 🔒');
+      setShowLoginModal(true);
+    } else {
+      setActiveCheckout(bookingItem);
+    }
+  };
+
+  const handleLoginSuccess = (user) => {
+    setIsLoggedIn(true);
+    setCurrentUser(user);
+    setShowLoginModal(false);
+    addToast(`Logged in as ${user.name}! 🔑`);
+    
+    // Automatically continue booking flow if there is a pending item
+    if (pendingBookingItem) {
+      setActiveCheckout(pendingBookingItem);
+      setPendingBookingItem(null);
+    }
+  };
+
   const handleBookingSuccess = (tripDetails) => {
     setUpcomingTrips(prev => [tripDetails, ...prev]);
     addToast('Booking Authorized Successfully! 🎉');
@@ -121,7 +152,15 @@ function App() {
         onCurrencyChange={setCurrency}
         language={language}
         onLanguageChange={setLanguage}
-        onProfileClick={() => setShowDashboard(true)}
+        isLoggedIn={isLoggedIn}
+        onProfileClick={() => {
+          if (isLoggedIn) {
+            setShowDashboard(true);
+          } else {
+            addToast('Login is required to view dashboard.');
+            setShowLoginModal(true);
+          }
+        }}
       />
 
       {/* Active Tab Router */}
@@ -129,7 +168,7 @@ function App() {
         {activeTab === 'explore' && (
           <ExploreView 
             onViewDestination={handleOpenDestination}
-            onBookActivity={setActiveCheckout}
+            onBookActivity={handleBookRequest}
             searchFilters={searchFilters}
             onSearch={setSearchFilters}
             wishlist={wishlist}
@@ -141,7 +180,7 @@ function App() {
 
         {activeTab === 'stays' && (
           <StaysView 
-            onBookStay={setActiveCheckout}
+            onBookStay={handleBookRequest}
             wishlist={wishlist}
             onToggleWishlist={handleToggleWishlist}
             currencySymbol={currencySymbols[currency]}
@@ -151,7 +190,7 @@ function App() {
 
         {activeTab === 'flights' && (
           <FlightsView 
-            onBookFlight={setActiveCheckout}
+            onBookFlight={handleBookRequest}
             currencySymbol={currencySymbols[currency]}
             currencyFactor={currencyFactors[currency]}
           />
@@ -159,7 +198,7 @@ function App() {
 
         {activeTab === 'deals' && (
           <DealsView 
-            onBookDeal={setActiveCheckout}
+            onBookDeal={handleBookRequest}
             currencySymbol={currencySymbols[currency]}
             currencyFactor={currencyFactors[currency]}
           />
@@ -228,7 +267,7 @@ function App() {
           onClose={() => setActiveDestination(null)}
           onBook={(bookingItem) => {
             setActiveDestination(null);
-            setActiveCheckout(bookingItem);
+            handleBookRequest(bookingItem);
           }}
           currencySymbol={currencySymbols[currency]}
           currencyFactor={currencyFactors[currency]}
@@ -248,7 +287,7 @@ function App() {
         <PricingDrawer 
           destination={activePricing}
           onClose={() => setActivePricing(null)}
-          onBook={setActiveCheckout}
+          onBook={handleBookRequest}
           currencySymbol={currencySymbols[currency]}
           currencyFactor={currencyFactors[currency]}
         />
@@ -274,6 +313,17 @@ function App() {
           onRemoveWishlist={handleToggleWishlist}
           onViewDestination={handleOpenDestination}
           journeysList={JOURNEYS_DATA}
+        />
+      )}
+
+      {/* Login Authentication Modal */}
+      {showLoginModal && (
+        <LoginModal 
+          onClose={() => {
+            setShowLoginModal(false);
+            setPendingBookingItem(null);
+          }}
+          onLoginSuccess={handleLoginSuccess}
         />
       )}
 
