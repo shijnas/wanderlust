@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { getTranslation } from '../translations';
 import './Hero.css';
 
-export default function Hero() {
+export default function Hero({ language }) {
   const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
@@ -11,6 +12,23 @@ export default function Hero() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Format Malayalam or languages with <br/> appropriately, or split by full stop
+  const renderTitle = () => {
+    const raw = getTranslation(language, 'heroTitle');
+    // If contains dots or stops, split to create stacked effect
+    const parts = raw.split(/[.।]/).filter(p => p.trim().length > 0);
+    if (parts.length >= 3) {
+      return (
+        <>
+          {parts[0]}.<br />
+          {parts[1]}.<br />
+          {parts[2]}.
+        </>
+      );
+    }
+    return raw;
+  };
 
   return (
     <section className="hero-section">
@@ -31,13 +49,11 @@ export default function Hero() {
       <div className="container hero-container">
         <div className="hero-text-content fade-in-up">
           <h1 className="hero-title">
-            EXPLORE.<br />
-            EXPERIENCE.<br />
-            EMBRACE.
+            {renderTitle()}
           </h1>
           <p className="hero-subheading">
-            Discover the world's most breathtaking destinations in absolute comfort.
-            <span className="subheading-accent"> Start your journey tonight.</span>
+            {getTranslation(language, 'heroSub')}
+            <span className="subheading-accent"> {getTranslation(language, 'heroSubAccent')}</span>
           </p>
         </div>
       </div>

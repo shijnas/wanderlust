@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, Map, MapPin, ChevronDown, Compass, Search, Navigation, CloudSun, Loader2, Sparkles, Sliders } from 'lucide-react';
+import { getTranslation } from '../translations';
 import './BookingSection.css';
 
 // Extended destinations for search autocomplete and routing
@@ -13,7 +14,7 @@ const DESTINATIONS = {
   'bali': { name: 'Bali, Indonesia', lat: -8.4, lng: 115.1, temp: '28°C', weather: 'Tropical Sunny', price: 410, hotel: 'Ubud Hanging Gardens' }
 };
 
-export default function BookingSection({ onBook, currencySymbol = '$', currencyFactor = 1.0 }) {
+export default function BookingSection({ onBook, currencySymbol = '$', currencyFactor = 1.0, language }) {
   const [searchVal, setSearchVal] = useState('Lofoten Islands');
   const [activeDest, setActiveDest] = useState(DESTINATIONS['lofoten islands']);
   const [checkIn, setCheckIn] = useState('2026-10-14');
@@ -27,7 +28,6 @@ export default function BookingSection({ onBook, currencySymbol = '$', currencyF
   const [activeFilters, setActiveFilters] = useState(['Hotels', 'Attractions']);
   const [aiPrompt, setAiPrompt] = useState('');
   const [isAiPlanning, setIsAiPlanning] = useState(false);
-  const [selectedRouteMode, setSelectedRouteMode] = useState('driving');
   
   // Real Maps API load status
   const [isMapLoaded, setIsMapLoaded] = useState(false);
@@ -247,11 +247,11 @@ export default function BookingSection({ onBook, currencySymbol = '$', currencyF
             
             {/* Left Panel: Autocomplete & parameters input */}
             <div className="booking-selectors">
-              <h3 className="booking-widget-title">BOOK YOUR STAY</h3>
+              <h3 className="booking-widget-title">{getTranslation(language, 'bookYourStay')}</h3>
               
               {/* Destination Google Places Autocomplete */}
               <div className="selector-field-group">
-                <label className="selector-label">Destination search</label>
+                <label className="selector-label">{getTranslation(language, 'destination')}</label>
                 <div className="search-input-wrapper">
                   <Search size={16} className="search-icon" />
                   <input 
@@ -303,7 +303,7 @@ export default function BookingSection({ onBook, currencySymbol = '$', currencyF
               {/* Guests and Room Type */}
               <div className="form-row">
                 <div className="selector-field-group flex-1">
-                  <label className="selector-label">Guests</label>
+                  <label className="selector-label">{getTranslation(language, 'guests')}</label>
                   <div className="select-dropdown-container">
                     <select value={guests} onChange={(e) => setGuests(e.target.value)}>
                       <option value="1 Adult">1 Adult</option>
@@ -330,7 +330,7 @@ export default function BookingSection({ onBook, currencySymbol = '$', currencyF
               {/* Budget slider */}
               <div className="selector-field-group">
                 <div className="budget-label-row">
-                  <label className="selector-label">Budget range</label>
+                  <label className="selector-label">{getTranslation(language, 'budgetRange')}</label>
                   <span className="budget-val-indicator">{formatPrice(budget)} max</span>
                 </div>
                 <input 
@@ -346,7 +346,7 @@ export default function BookingSection({ onBook, currencySymbol = '$', currencyF
 
               {/* Travel Style */}
               <div className="selector-field-group">
-                <label className="selector-label">Travel Style</label>
+                <label className="selector-label">{getTranslation(language, 'travelStyle')}</label>
                 <div className="travel-styles-grid">
                   {['Solo', 'Romantic', 'Adventure', 'Family'].map(style => (
                     <button 
@@ -378,7 +378,7 @@ export default function BookingSection({ onBook, currencySymbol = '$', currencyF
               </div>
 
               <button className="btn-primary w-full booking-submit-btn" onClick={handleReserve}>
-                <span>RESERVE JOURNEY</span>
+                <span>{getTranslation(language, 'reserve')}</span>
               </button>
             </div>
 

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { PlaneTakeoff, MapPin, Calendar, Users, Search } from 'lucide-react';
+import { getTranslation } from '../translations';
 import './SearchBar.css';
 
-export default function SearchBar({ filters, onSearch }) {
+export default function SearchBar({ filters, onSearch, language }) {
   const [departure, setDeparture] = useState(filters?.departure || 'Oslo, NO');
   const [destination, setDestination] = useState(filters?.destination || '');
   const [dates, setDates] = useState(filters?.dates || '14 Oct - 21 Oct');
@@ -20,13 +21,13 @@ export default function SearchBar({ filters, onSearch }) {
       <div className="container">
         <div className="search-card glass-panel glow-hover">
           <div className="search-card-header">
-            <span className="search-section-tag">SEARCH BAR</span>
+            <span className="search-section-tag">{getTranslation(language, 'searchBar')}</span>
           </div>
           
           <form className="search-form" onSubmit={handleSearch}>
             {/* Departure */}
             <div className="input-group-wrapper">
-              <label className="input-label">Departure</label>
+              <label className="input-label">{getTranslation(language, 'departure')}</label>
               <div className="input-field-container">
                 <PlaneTakeoff className="input-icon" size={18} />
                 <input 
@@ -46,7 +47,7 @@ export default function SearchBar({ filters, onSearch }) {
 
             {/* Destination */}
             <div className="input-group-wrapper">
-              <label className="input-label">Destination</label>
+              <label className="input-label">{getTranslation(language, 'destination')}</label>
               <div className="input-field-container">
                 <MapPin className="input-icon" size={18} />
                 <input 
@@ -61,7 +62,7 @@ export default function SearchBar({ filters, onSearch }) {
 
             {/* Dates */}
             <div className="input-group-wrapper">
-              <label className="input-label">Dates</label>
+              <label className="input-label">{getTranslation(language, 'dates')}</label>
               <div className="input-field-container">
                 <Calendar className="input-icon" size={18} />
                 <input 
@@ -76,7 +77,7 @@ export default function SearchBar({ filters, onSearch }) {
 
             {/* Guests */}
             <div className="input-group-wrapper">
-              <label className="input-label">Guests</label>
+              <label className="input-label">{getTranslation(language, 'guests')}</label>
               <div className="input-field-container">
                 <Users className="input-icon" size={18} />
                 <input 
@@ -91,7 +92,7 @@ export default function SearchBar({ filters, onSearch }) {
 
             {/* Search Button */}
             <button type="submit" className="search-submit-btn">
-              <span>SEARCH</span>
+              <span>{getTranslation(language, 'search')}</span>
             </button>
           </form>
         </div>

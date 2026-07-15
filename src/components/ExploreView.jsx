@@ -14,15 +14,16 @@ export default function ExploreView({
   wishlist,
   onToggleWishlist,
   currencySymbol,
-  currencyFactor
+  currencyFactor,
+  language
 }) {
   return (
     <div className="explore-view-wrapper">
       {/* Parallax banner */}
-      <Hero />
+      <Hero language={language} />
 
       {/* Floating search form */}
-      <SearchBar onSearch={onSearch} filters={searchFilters} />
+      <SearchBar onSearch={onSearch} filters={searchFilters} language={language} />
 
       {/* Main Journeys list */}
       <FeaturedJourneys 
@@ -32,16 +33,18 @@ export default function ExploreView({
         currencySymbol={currencySymbol}
         currencyFactor={currencyFactor}
         searchFilters={searchFilters}
+        language={language}
       />
 
       {/* Popular experience categories */}
-      <PopularExperiences />
+      <PopularExperiences language={language} />
 
       {/* Interactive Map & Booking */}
       <BookingSection 
         onBook={onBookActivity} 
         currencySymbol={currencySymbol} 
         currencyFactor={currencyFactor} 
+        language={language}
       />
 
       {/* AI Trip Planner Timeline widget */}

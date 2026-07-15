@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { Star, Heart, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import { getTranslation } from '../translations';
 import './FeaturedJourneys.css';
 
 const JOURNEYS_DATA = [
@@ -57,7 +58,8 @@ export default function FeaturedJourneys({
   onViewPricing,
   currencySymbol = '$', 
   currencyFactor = 1.0,
-  searchFilters
+  searchFilters,
+  language
 }) {
   const scrollContainerRef = useRef(null);
 
@@ -102,7 +104,7 @@ export default function FeaturedJourneys({
       <div className="container">
         {/* Header with Navigation Arrows */}
         <div className="featured-header">
-          <h2 className="featured-title">FEATURED JOURNEYS</h2>
+          <h2 className="featured-title">{getTranslation(language, 'featuredTitle')}</h2>
           <div className="slider-controls">
             <button className="control-btn" onClick={() => scroll('left')} aria-label="Previous journeys">
               <ChevronLeft size={20} />

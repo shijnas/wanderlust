@@ -175,6 +175,7 @@ function App() {
             onToggleWishlist={handleToggleWishlist}
             currencySymbol={currencySymbols[currency]}
             currencyFactor={currencyFactors[currency]}
+            language={language}
           />
         )}
 

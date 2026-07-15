@@ -1,4 +1,5 @@
 import React from 'react';
+import { getTranslation } from '../translations';
 import './PopularExperiences.css';
 
 const EXPERIENCES = [
@@ -39,7 +40,7 @@ const EXPERIENCES = [
   {
     id: 3,
     title: 'NORTHERN LIGHTS',
-    description: 'Witness the breathtaking dance of the green aurora borealis across clear, crisp Arctic winter skies.',
+    description: 'Witness the breathtaking dance of the green aurora borearel across clear, crisp Arctic winter skies.',
     iconColor: '#2B8FFF',
     // Custom premium SVG Aurora curves
     svg: (color) => (
@@ -72,13 +73,13 @@ const EXPERIENCES = [
   }
 ];
 
-export default function PopularExperiences() {
+export default function PopularExperiences({ language }) {
   return (
     <section className="experiences-section" id="stays">
       <div className="container">
         {/* Section Header */}
         <div className="experiences-header">
-          <h2 className="experiences-title">POPULAR EXPERIENCES</h2>
+          <h2 className="experiences-title">{getTranslation(language, 'popularTitle')}</h2>
         </div>
 
         {/* 4 Cards Grid */}

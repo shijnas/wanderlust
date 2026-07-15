@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Menu, X, Globe, DollarSign, User } from 'lucide-react';
+import { getTranslation } from '../translations';
 import './Navbar.css';
 
 const LANGUAGES = [
@@ -10,7 +11,8 @@ const LANGUAGES = [
   { code: 'ES', name: 'Español' },
   { code: 'IT', name: 'Italiano' },
   { code: 'JA', name: '日本語' },
-  { code: 'HI', name: 'हिन्दी' }
+  { code: 'HI', name: 'हिन्दी' },
+  { code: 'ML', name: 'മലയാളം' }
 ];
 
 const CURRENCIES = [
@@ -31,6 +33,7 @@ export default function Navbar({
   onCurrencyChange, 
   language, 
   onLanguageChange, 
+  isLoggedIn,
   onProfileClick 
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -66,7 +69,9 @@ export default function Navbar({
         
         {/* Left: Logo */}
         <div className="logo-area">
-          <a href="#" className="logo-text" onClick={() => handleTabClick('explore')}>WANDERLUST</a>
+          <a href="#" className="logo-text" onClick={() => handleTabClick('explore')}>
+            {getTranslation(language, 'logo')}
+          </a>
         </div>
 
         {/* Center: Navigation Menu */}
@@ -81,7 +86,7 @@ export default function Navbar({
                 handleTabClick(tab);
               }}
             >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {getTranslation(language, tab)}
             </a>
           ))}
           
@@ -97,7 +102,7 @@ export default function Navbar({
             </div>
             <button className="btn-primary w-full" onClick={() => { setMobileMenuOpen(false); onProfileClick(); }}>
               <User size={16} />
-              <span>My Profile</span>
+              <span>{isLoggedIn ? getTranslation(language, 'profile') : getTranslation(language, 'login')}</span>
             </button>
           </div>
         </div>
@@ -156,9 +161,9 @@ export default function Navbar({
           </div>
 
           {/* Profile Access Button */}
-          <button className="btn-primary profile-btn-pill" onClick={onProfileClick} title="Open Explorer Profile">
+          <button className="btn-primary profile-btn-pill" onClick={onProfileClick} title={isLoggedIn ? "Open Explorer Profile" : "Login to Account"}>
             <User size={16} />
-            <span>Profile</span>
+            <span>{isLoggedIn ? getTranslation(language, 'profile') : getTranslation(language, 'login')}</span>
           </button>
           
           {/* Hamburger Menu Trigger */}
