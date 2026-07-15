@@ -38,7 +38,11 @@ export default function ExploreView({
       <PopularExperiences />
 
       {/* Interactive Map & Booking */}
-      <BookingSection />
+      <BookingSection 
+        onBook={onBookActivity} 
+        currencySymbol={currencySymbol} 
+        currencyFactor={currencyFactor} 
+      />
 
       {/* AI Trip Planner Timeline widget */}
       <div className="container">

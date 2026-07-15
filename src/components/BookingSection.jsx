@@ -13,7 +13,7 @@ const DESTINATIONS = {
   'bali': { name: 'Bali, Indonesia', lat: -8.4, lng: 115.1, temp: '28°C', weather: 'Tropical Sunny', price: 410, hotel: 'Ubud Hanging Gardens' }
 };
 
-export default function BookingSection({ onBook, currencySymbol, currencyFactor }) {
+export default function BookingSection({ onBook, currencySymbol = '$', currencyFactor = 1.0 }) {
   const [searchVal, setSearchVal] = useState('Lofoten Islands');
   const [activeDest, setActiveDest] = useState(DESTINATIONS['lofoten islands']);
   const [checkIn, setCheckIn] = useState('2026-10-14');
